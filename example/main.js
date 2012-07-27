@@ -1,18 +1,17 @@
 #!/usr/local/bin/node
 
 with(require("../geneticprog.js")){
-	var population = null;
+	var population = [];
 
 	var g = new (require("../../jsrandomproggen/madmonkey.js").Generator)('_->number');
 
 	g.addForm('(Math.sin)', 												'(number)->number' ).
-			addForm('(Math.cos)', 											'(number)->number' ).
-			addForm('(Math.sqrt)', 											'(number)->number' ).
-			addForm('(Math.tan)', 											'(number)->number' ).
+			addForm('(Math.cos)', 											'(number)->number' ).			
 			addForm('(150)', 													'number');
 
-	population = [g.gen(10), g.gen(10), g.gen(10)];
-	//console.log(JSON.stringify(population, null, 3));
+	for(var i = 0; i < 1000; ++i){
+		population.push(g.gen(10));
+	}
 
 	var e = new Evolver(
 			{
@@ -24,11 +23,15 @@ with(require("../geneticprog.js")){
 			{
 				error : (function(){
 								var target = Math.sin(Math.cos(Math.sin(Math.cos(150)))); 
-								return function(i){ return eval(i.compile()) - target } 
+								return function(i){
+									var tmp = eval(i.compile()); 
+									if(tmp == NaN || tmp == null) /* Invalid expression, penalty*/ return 99999; 
+									return Math.abs(tmp - target);
+								} 
 							})()
 			}, 
 			population);
 	//--
-	console.log(JSON.stringify(e.iterate(), null, 3));
+	console.log(JSON.stringify(e.iterate(2), null, 3));
 	
 }

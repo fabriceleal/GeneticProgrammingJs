@@ -33,6 +33,15 @@
 			return inject(extract(a), b);
 		};
 
+		Number.prototype.repeat = function(doSomething){
+			var last = Math.floor(this);
+			var ret = new Array(last);
+			for(var i = 0; i < last; ++i){
+				ret[i] = doSomething();
+			}
+			return ret;
+		};
+
 
 		// "select"
 		var tournament = function( sortedInds, size ){
@@ -48,19 +57,32 @@
 
 		// "evolve"
 		this.iterate = function( iterations ){
-			var sorted 	= population.sort(function(a, b){ return error(a) - error(b)});
-			var best 	= sorted[0];
-			var bestError = error(best);
+			var _iterate = function(inds, iterations){
+				var sorted 	= inds.sort(
+						function(a, b){
+							return error(a) - error(b);
+						});
+				//--
+				var best 	= sorted[0];
+				var bestError = error(best);
 			
-			if(iterations > 0){
+				if(iterations > 0){
+					return _iterate(
+							[].
+									concat( (inds.length / 2).repeat(function(){ return mutate(tournament(sorted, 7)) }) ).
+									concat( (inds.length / 4).repeat(function(){ return crossover(tournament(sorted, 7), tournament(sorted, 7)) }) ).
+									concat( (inds.length / 4).repeat(function(){ return tournament(sorted, 7) }) ),
+							iterations - 1);
+				}
+			
+				return {
+					best : best.compile(),
+					bestError : bestError/*,
+					results: sorted.map(function(e){ return { individual:e.compile(), error:error(e) }})*/
+				}
+			}
 
-			}
-			
-			return {
-				best : best.compile(),
-				bestError : bestError,
-				results: population.map(function(e){ return { individual:e.compile(), error:error(e) }})
-			}
+			return _iterate(population, Math.max(iterations, 0));
 		};
 
 		// TODO Getters for these
