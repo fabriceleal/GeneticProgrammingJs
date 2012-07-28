@@ -14,7 +14,7 @@ with(require("../geneticprog.js")){
 	g.addForm('(function(){ return Math.floor(Math.random() * 10 - 5)})',			'_->number');
 
 	for(var i = 0; i < 1000; ++i){
-		population.push(g.gen(5));
+		population.push(g.gen(50));
 	}
 
 	var e = new Evolver(
@@ -22,7 +22,7 @@ with(require("../geneticprog.js")){
 				randomCode : function(depth){ return g.gen(depth); },
 				inject : function(t1, t2){ return t1.inject(t2); },
 				extract: function(t){ return t.extract(); },
-				maxDepth: 2
+				maxDepth: 50
 			},
 			{
 				error : (function(){
@@ -50,6 +50,6 @@ with(require("../geneticprog.js")){
 			}, 
 			population);
 	//--
-	console.log(JSON.stringify(e.evolve(0.1), null, 3));
+	console.log(JSON.stringify(e.evolve(7), null, 3));
 	
 }

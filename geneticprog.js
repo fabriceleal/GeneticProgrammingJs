@@ -57,7 +57,7 @@
 		};
 
 		// private
-		var _iterate = function(inds, iterations, maxError){
+		var _iterate = function(inds, iterations, maxIterations, maxError){
 			var sorted 	= inds.sort(
 					function(a, b){
 						return error(a) - error(b);
@@ -65,21 +65,24 @@
 			//--
 			var best 		= sorted[0];
 			var bestError 	= error(best);
-		
-			// if error was not supplied, continue
-			// if error was supplied but is inferior to the maxError wanted, continue
-			if((maxError === undefined && iterations > 0) || (maxError >= 0 && bestError > maxError)){ 
 
+			//
+
+			if(iterations < maxIterations && (maxError === undefined || (maxError >= 0 && bestError > maxError))){ 
+				//console.log('A');
 				return _iterate(
 						[].
 								concat( (inds.length / 2).repeat(function(){ return mutate(tournament(sorted, 7)) }) ).
 								concat( (inds.length / 4).repeat(function(){ return crossover(tournament(sorted, 7), tournament(sorted, 7)) }) ).
 								concat( (inds.length / 4).repeat(function(){ return tournament(sorted, 7) }) ),
-						iterations - 1);	
-				
+						iterations + 1, maxIterations, maxError);	
+				//---				
 			}
 
-			if(maxError >= 0 && bestError > maxError){
+			//console.log('iterations = ' + iterations + ', maxError = ' + maxError + ', bestError = ' + bestError);
+
+			if(iterations == maxIterations && maxError >= 0 && bestError > maxError){
+				//console.log('B');
 				return {
 					// No good enough solution found
 					iteration: iterations,
@@ -87,20 +90,22 @@
 				};
 			}
 
+			//console.log('C');
 			return {
 				iteration: iterations,
 				best : best.compile(),
 				bestError : bestError/*,
 				results: sorted.map(function(e){ return { individual:e.compile(), error:error(e) }})*/
 			}
+			
 		}
 
 		this.iterate = function( iterations ){
-			return _iterate(population, Math.max(iterations, 0));
+			return _iterate(population, 0, Math.max(iterations, 0));
 		};
 
 		this.evolve = function( maxError ){
-			return _iterate(population, 3000 /* Put max call stack here ...*/, maxError);
+			return _iterate(population, 0, 3000 /* Put max call stack here ...*/, maxError);
 		};
 
 		// TODO Getters for these
