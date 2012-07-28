@@ -1,9 +1,9 @@
 #!/usr/local/bin/node
 
-with(require("../geneticprog.js")){
+with(require("jsgp")){
 	var population = [];
 
-	var g = new (require("../../jsrandomproggen/madmonkey.js").Generator)(
+	var g = new (require("madmonkey").Generator)(
 			'number->number', [{ name: 'x', type:'number'}]);
 	//--
 
@@ -13,8 +13,8 @@ with(require("../geneticprog.js")){
 	g.addForm('(function(a,b){ if(b == 0) return 0; else return a/b;})',	'(number,number)->number' );
 	g.addForm('(function(){ return Math.floor(Math.random() * 10 - 5)})',			'_->number');
 
-	for(var i = 0; i < 1000; ++i){
-		population.push(g.gen(50));
+	for(var i = 0; i < 50; ++i){
+		population.push(g.gen(10));
 	}
 
 	var e = new Evolver(
@@ -22,7 +22,7 @@ with(require("../geneticprog.js")){
 				randomCode : function(depth){ return g.gen(depth); },
 				inject : function(t1, t2){ return t1.inject(t2); },
 				extract: function(t){ return t.extract(); },
-				maxDepth: 50
+				maxDepth: 10
 			},
 			{
 				error : (function(){
@@ -50,6 +50,6 @@ with(require("../geneticprog.js")){
 			}, 
 			population);
 	//--
-	console.log(JSON.stringify(e.evolve(7), null, 3));
+	console.log(JSON.stringify(e.evolve(10), null, 3));
 	
 }

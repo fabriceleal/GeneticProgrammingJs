@@ -1,0 +1,19 @@
+{
+  "author": "Fabrice Leal <fabrice.leal.ch@gmail.com> (fabriceleal.github.com)",
+  "name": "jsgp",
+  "description": "A simple framework for genetic programming in Javascript.",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/fabriceleal/GeneticProgrammingJs.git"
+  },
+  "main": "geneticprog.js",
+  "dependencies": {
+		"madmonkey": ">=0.0.1"
+	},
+  "devDependencies": {},
+  "optionalDependencies": {},
+  "engines": {
+    "node": "*"
+  }
+}

@@ -1,5 +1,6 @@
 /*
-	Based in https://gist.github.com/1335696, a simple genetic programming test bed in clojure
+	Based in https://gist.github.com/1335696, a simple genetic programming test bed in clojure.
+	My javascript version is way longer and dirtier :(
 */
 
 
