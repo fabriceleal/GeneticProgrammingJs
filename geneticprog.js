@@ -1,6 +1,11 @@
 /*
+	A simple genetic programing framework.
+	You should implement the functions to generate the expression trees and the mutate and extract operators. You can use madmonkey (see examples).
+
 	Based in https://gist.github.com/1335696, a simple genetic programming test bed in clojure.
 	My javascript version is way longer and dirtier :(
+
+	TODO 
 */
 
 
@@ -25,7 +30,6 @@
 		var error		= populationConfig.error;
 
 
-		// Genetic Programming Framework
 		var mutate = function(ind){
 			return inject(randomCode(generatorConfig.maxDepth), ind);
 		};
@@ -43,7 +47,6 @@
 			}
 			return ret;
 		};
-
 
 		// "select"
 		var tournament = function( sortedInds, size ){
@@ -63,27 +66,21 @@
 					function(a, b){
 						return error(a) - error(b);
 					});
-			//--
+
 			var best 		= sorted[0];
 			var bestError 	= error(best);
 
-			//
-
 			if(iterations < maxIterations && (maxError === undefined || (maxError >= 0 && bestError > maxError))){ 
-				//console.log('A');
 				return _iterate(
 						[].
 								concat( (inds.length / 2).repeat(function(){ return mutate(tournament(sorted, 7)) }) ).
 								concat( (inds.length / 4).repeat(function(){ return crossover(tournament(sorted, 7), tournament(sorted, 7)) }) ).
 								concat( (inds.length / 4).repeat(function(){ return tournament(sorted, 7) }) ),
 						iterations + 1, maxIterations, maxError);	
-				//---				
+			
 			}
 
-			//console.log('iterations = ' + iterations + ', maxError = ' + maxError + ', bestError = ' + bestError);
-
 			if(iterations == maxIterations && maxError >= 0 && bestError > maxError){
-				//console.log('B');
 				return {
 					// No good enough solution found
 					iteration: iterations,
@@ -91,15 +88,12 @@
 				};
 			}
 
-			//console.log('C');
 			return {
 				iteration: iterations,
 				best : best.compile(),
-				bestError : bestError/*,
-				results: sorted.map(function(e){ return { individual:e.compile(), error:error(e) }})*/
-			}
-			
-		}
+				bestError : bestError
+			};
+		};
 
 		this.iterate = function( iterations ){
 			return _iterate(population, 0, Math.max(iterations, 0));
@@ -115,6 +109,10 @@
 
 		return this;
 	};
+
+	var EventEmitter = require('events').EventEmitter;
+	Evolver.prototype = new EventEmitter();
+	Evolver.prototype.constructor = Evolver;
 
 	// TODO func for empty configs and empty individual (?) ...
 
