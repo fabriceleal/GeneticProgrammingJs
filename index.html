@@ -3,7 +3,9 @@
 <script src="jquery-1.8.1.min.js"></script>
 <script src="jquery.flot.js"></script>
 <script type="text/javascript">
-
+	// So it can be accessed from the browser console, for testing ...
+	var thread;
+	
 	$(function(){		
 		var optimize = 'function(x){ return x*x + x + 1; }';
 		
@@ -17,7 +19,7 @@
 		original = testValues.map(function(i){ return [i, fn(i)];})
 		
 		$.plot($('#plot'), [{label:"original", data:original}]);
-		var thread = new Worker("exec.js");
+		thread = new Worker("exec.js");
 
 		thread.addEventListener("message", function(event){
 			$('#logs').append(new Date() + ': ' + event.data.name + ' result: ' + JSON.stringify(event.data.data) + "<br/ > ");
