@@ -1,28 +1,60 @@
 <html>
 <head>
-</head>
-<body>
+<script src="jquery-1.8.1.min.js"></script>
+<script src="jquery.flot.js"></script>
 <script type="text/javascript">
 
-var thread = new Worker("exec.js");
+	$(function(){		
+		var optimize = 'function(x){ return x*x + x + 1; }';
+		
+		$('#logs').append(new Date() + ': to optimize: ' + optimize + '<br/ >');
 
-document.write('Genetic programming with madmonkey and gpjs <br/ >');
+		// Plot the function to approximate
+		var testValues = [], original, fn = eval('(function(){ return (' + optimize + ');})()');
+		for(var i = -1, y = 0; i <=1; i+=0.1, ++y){
+			testValues.push(i);
+		}
+		original = testValues.map(function(i){ return [i, fn(i)];})
+		
+		$.plot($('#plot'), [{label:"original", data:original}]);
+		var thread = new Worker("exec.js");
 
-thread.addEventListener("message", function(event){
-	document.write(new Date() + ': ' + event.data.name + ' result: ' + JSON.stringify(event.data.data) + "<br/ > ");
+		thread.addEventListener("message", function(event){
+			$('#logs').append(new Date() + ': ' + event.data.name + ' result: ' + JSON.stringify(event.data.data) + "<br/ > ");
 
-	if(event.data.name === "load")
-		thread.postMessage({ name:"generator", data: { maxDepth: 10 }});
-	if(event.data.name === "generator")
-		thread.postMessage({ name:"population", data: { number: 50 } });
-	if(event.data.name === "population")
-		thread.postMessage({ name:"evolver" , data: { }});
-	if(event.data.name === "evolver")
-		thread.postMessage({ name:"start" , data: { type:"evolve", arg: 7 }});
-}, false);
+			if(event.data.name === "load")
+				thread.postMessage({ name:"generator", data: { maxDepth: 10 }});
+			if(event.data.name === "generator")
+				thread.postMessage({ name:"population", data: { number: 50 } });
+			if(event.data.name === "population")
+				thread.postMessage({ name:"evolver" , data: { fn: optimize }});
+			if(event.data.name === "evolver")
+				thread.postMessage({ name:"start" , data: { type: "evolve", arg: 7 }});
+			if(event.data.name === "start") {
+				// plot best, if found
+				if(!event.data.data.err && event.data.data.result){
+					var best = eval('(function(){ return (' + event.data.data.result.best + ');})()');
+					var bestData = testValues.map(function(i){ return [i, best(i)];});
 
-thread.postMessage({ name:"load", data: { }});
+					$.plot($('#plot'), [{label:"original", data:original}, {label:"best", data:bestData}]);
+				}
+			}
+		}, false);
+
+		thread.postMessage({ name:"load", data: { }});
+	});
 
 </script>
+</head>
+<body>
+<h1>Genetic programming with madmonkey and gpjs</h1>
+<h2>Approximate numerical function R -> R</h2>
+<div id="parameters"></div>
+<div id="plot" style="width:600px;height:300px"></div>
+<div>
+<i>If the best error is something like 4.440892098500626e-16, one can say that we matched the original function!</i><br/ >
+<b>Logs:</b>
+<div id="logs"></div>
+</div>
 </body>
 </html>

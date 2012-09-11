@@ -31,7 +31,7 @@ addEventListener("message", function(event){
 					}
 				}
 
-				postMessage({ name: "load", data: { err:err }});
+				postMessage({ name: "load", data: { pars: event.data.data, err:err }});
 			}
 			break;
 		case "generator":
@@ -40,8 +40,7 @@ addEventListener("message", function(event){
 				try {
 
 					maxDepth = event.data.data.maxDepth;
-					generator = new madmonkey.Generator(
-							'number->number', [{ name: 'x', type:'number'}]);
+					generator = new madmonkey.Generator('number->number', [{ name: 'x', type:'number'}]);
 					//--
 
 					generator.addForm('(function(a,b){ return a+b;})', '(number,number)->number' );
@@ -54,7 +53,7 @@ addEventListener("message", function(event){
 					err = e.toString();
 				}
 
-				postMessage({ name: "generator", data: { err:err }});
+				postMessage({ name: "generator", data: { pars: event.data.data, err:err }});
 			}
 			break;
 		case "population":
@@ -71,7 +70,7 @@ addEventListener("message", function(event){
 					err = e.toString();
 				}
 
-				postMessage({ name: "population", data: { err:err }});
+				postMessage({ name: "population", data: { pars: event.data.data, err:err }});
 			}
 			break;
 		case "evolver":
@@ -86,8 +85,8 @@ addEventListener("message", function(event){
 								maxDepth: maxDepth
 							},
 							{
-								error : (function(){
-												var fn = function(x){ return x*x + x + 1; };
+								error : (function(){												
+												var fn = eval('(function(){ return (' + event.data.data.fn + '); })()')
 												var idx = new Array(20), data = new Array(20);
 												for(var i = -1, y = 0; i <=1; i+=0.1, ++y){
 													idx[y] = i;
@@ -98,9 +97,9 @@ addEventListener("message", function(event){
 													var genred = eval(i.compile());
 													var test = idx.map(genred);
 													return test.map(function(i, idx){ 
-															return Math.abs( i - data[idx]); 
+															return Math.abs( i - data[idx] ); 
 													}).reduce(function(t,i){
-															return t+i; 
+															return t + i; 
 													}, 0);
 												};											
 											})()
@@ -111,7 +110,7 @@ addEventListener("message", function(event){
 					err = e;
 				}
 
-				postMessage({ name: "evolver", data: { err:err }});
+				postMessage({ name: "evolver", data: { pars: event.data.data, err:err }});
 			}
 			break;
 		case "start":
