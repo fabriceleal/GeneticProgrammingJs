@@ -55,7 +55,7 @@ var require = function(module, callback) {
 }
 require.resolve = function(module) {
 	var r = module.match(/^(\.{0,2}\/)?([^\.]*)(\..*)?$/);
-	return (r[1]?r[1]:'/js_modules/')+r[2]+(r[3]?r[3]:'.js');
+	return (r[1]?r[1]:'/GeneticProgrammingJs/js_modules/')+r[2]+(r[3]?r[3]:'.js');
 }
 // INFO initializing module cache
 require.cache = new Object();
