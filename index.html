@@ -10,13 +10,18 @@ document.write('Genetic programming with madmonkey and gpjs <br/ >');
 
 thread.addEventListener("message", function(event){
 	document.write(new Date() + ': ' + event.data.name + ' result: ' + JSON.stringify(event.data.data) + "<br/ > ");
+
+	if(event.data.name === "load")
+		thread.postMessage({ name:"generator", data: { maxDepth: 10 }});
+	if(event.data.name === "generator")
+		thread.postMessage({ name:"population", data: { number: 50 } });
+	if(event.data.name === "population")
+		thread.postMessage({ name:"evolver" , data: { }});
+	if(event.data.name === "evolver")
+		thread.postMessage({ name:"start" , data: { type:"evolve", arg: 7 }});
 }, false);
 
 thread.postMessage({ name:"load", data: { }});
-thread.postMessage({ name:"generator", data: { maxDepth: 10 }});
-thread.postMessage({ name:"population", data: { number: 50 } });
-thread.postMessage({ name:"evolver" , data: { }});
-thread.postMessage({ name:"start" , data: { type:"evolve", arg: 7 }});
 
 </script>
 </body>
