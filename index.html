@@ -5,6 +5,7 @@
 <script type="text/javascript">
 	// So it can be accessed from the browser console, for testing ...
 	var thread;
+	var hideOrShowLogs;
 	
 	$(function(){		
 		var optimize = 'function(x){ return x*x + x + 1; }';
@@ -44,22 +45,45 @@
 		}, false);
 
 		thread.postMessage({ name:"load", data: { }});
+		
+		
+		hideOrShowLogs = (function(){
+			// First run, set text and hide
+			var hidden = true;
+			var a = $('#hide-show-logs-a');
+			var l = $('#logs');
+			a.html('Show logs');
+			l.hide();
+			
+			// Function to toogle logs visible/invisible
+			return function(){
+				hidden = !hidden;
+				if(hidden) {
+					l.hide("slow");
+					a.html('Show logs');
+				} else {
+					l.show("slow");
+					a.html('Hide logs');
+				}
+			};
+		})();		
 	});
 
 </script>
 </head>
-<body>
-<h1>Genetic programming with madmonkey and gpjs</h1>
-<h2>Approximate numerical function R -> R</h2>
-<div id="parameters"></div>
-<div id="plot" style="width:600px;height:300px"></div>
-<div id="logs">
-<i>If the best error is something like 4.440892098500626e-16, one can say that we matched the original function!</i><br/ >
-<b>Logs:</b>
-<div id="logs-content"></div>
-</div>
-<br/ >
-<i>Plot generated using <a href="http://www.flotcharts.org/">flot</a>. <br/>
-Genetic programming implemented with <a href="https://github.com/fabriceleal/MadMonkeyJs">madmonkey</a> and <a href="https://github.com/fabriceleal/GeneticProgrammingJs">gpjs</a>.</i>
-</body>
+	<body>
+		<h1>Genetic programming with madmonkey and gpjs</h1>
+		<h2>Approximate numerical function R -> R</h2>
+		<div id="parameters"></div>
+		<div id="plot" style="width:600px;height:300px"></div>
+		<a id="hide-show-logs-a" href="javascript:hideOrShowLogs()"></a>
+		<div id="logs">
+			<i>If the best error is something like 4.440892098500626e-16, one can say that we matched the original function!</i><br/ >
+			<b>Logs:</b>
+			<div id="logs-content"></div>
+		</div>
+		<br/ >
+		<i>Plot generated using <a href="http://www.flotcharts.org/">flot</a>. <br/>
+		Genetic programming implemented with <a href="https://github.com/fabriceleal/MadMonkeyJs">madmonkey</a> and <a href="https://github.com/fabriceleal/GeneticProgrammingJs">gpjs</a>.</i>
+	</body>
 </html>
