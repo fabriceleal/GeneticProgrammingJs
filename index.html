@@ -9,7 +9,7 @@
 	$(function(){		
 		var optimize = 'function(x){ return x*x + x + 1; }';
 		
-		$('#logs').append(new Date() + ': to optimize: ' + optimize + '<br/ >');
+		$('#logs-content').append(new Date() + ': to optimize: ' + optimize + '<br/ >');
 
 		// Plot the function to approximate
 		var testValues = [], original, fn = eval('(function(){ return (' + optimize + ');})()');
@@ -18,11 +18,11 @@
 		}
 		original = testValues.map(function(i){ return [i, fn(i)];})
 		
-		$.plot($('#plot'), [{label:"original", data:original}]);
+		$.plot($('#plot'), [{label:"original", data:original, points:{ show:true }}]);
 		thread = new Worker("exec.js");
 
 		thread.addEventListener("message", function(event){
-			$('#logs').append(new Date() + ': ' + event.data.name + ' result: ' + JSON.stringify(event.data.data) + "<br/ > ");
+			$('#logs-content').append(new Date() + ': ' + event.data.name + ' result: ' + JSON.stringify(event.data.data) + "<br/ > ");
 
 			if(event.data.name === "load")
 				thread.postMessage({ name:"generator", data: { maxDepth: 10 }});
@@ -38,7 +38,7 @@
 					var best = eval('(function(){ return (' + event.data.data.result.best + ');})()');
 					var bestData = testValues.map(function(i){ return [i, best(i)];});
 
-					$.plot($('#plot'), [{label:"original", data:original}, {label:"best", data:bestData}]);
+					$.plot($('#plot'), [{label:"original", data:original, points:{ show:true }}, {label:"best", data:bestData}]);
 				}
 			}
 		}, false);
@@ -53,10 +53,10 @@
 <h2>Approximate numerical function R -> R</h2>
 <div id="parameters"></div>
 <div id="plot" style="width:600px;height:300px"></div>
-<div>
+<div id="logs">
 <i>If the best error is something like 4.440892098500626e-16, one can say that we matched the original function!</i><br/ >
 <b>Logs:</b>
-<div id="logs"></div>
+<div id="logs-content"></div>
 </div>
 <br/ >
 <i>Plot generated using <a href="http://www.flotcharts.org/">flot</a>. <br/>
