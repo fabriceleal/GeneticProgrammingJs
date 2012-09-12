@@ -4,14 +4,19 @@
 <script src="jquery.flot.js"></script>
 <script type="text/javascript">
 	// So it can be accessed from the browser console, for testing ...
-	var thread;
+	var worker;
 	var hideOrShowLogs;
+	var go;
 	
 	$(function(){		
 		var optimize = 'function(x){ return x*x + x + 1; }';
 		
-		$('#logs-content').append(new Date() + ': to optimize: ' + optimize + '<br/ >');
-
+		var plot = $('#plot');
+		var logs = $('#logs-content');
+		var status = $('#status');
+		
+		worker = new Worker("exec.js");
+		
 		// Plot the function to approximate
 		var testValues = [], original, fn = eval('(function(){ return (' + optimize + ');})()');
 		for(var i = -1, y = 0; i <=1; i+=0.1, ++y){
@@ -19,33 +24,50 @@
 		}
 		original = testValues.map(function(i){ return [i, fn(i)];})
 		
-		$.plot($('#plot'), [{label:"original", data:original, points:{ show:true }}]);
-		thread = new Worker("exec.js");
+		logs.append(new Date() + ': to approximate: ' + testValues.join(', ') + '<br/ >');
+		
+		$.plot(plot, [{label:"original", data:original, points:{ show:true }}]);
+		
 
-		thread.addEventListener("message", function(event){
-			$('#logs-content').append(new Date() + ': ' + event.data.name + ' result: ' + JSON.stringify(event.data.data) + "<br/ > ");
+		worker.addEventListener("message", function(event){
+			logs.append(new Date() + ': ' + event.data.name + ' result: ' + JSON.stringify(event.data.data) + "<br/ > ");
 
-			if(event.data.name === "load")
-				thread.postMessage({ name:"generator", data: { maxDepth: 10 }});
-			if(event.data.name === "generator")
-				thread.postMessage({ name:"population", data: { number: 50 } });
-			if(event.data.name === "population")
-				thread.postMessage({ name:"evolver" , data: { fn: optimize }});
-			if(event.data.name === "evolver")
-				thread.postMessage({ name:"start" , data: { type: "evolve", arg: 7 }});
+			if(event.data.data.err) {
+				status.html('Err! Check the logs, try again!');
+				return;
+			}
+			
+			if(event.data.name === "load"){				
+				worker.postMessage({ name:"generator", data: { maxDepth: 10 }});
+			}
+			if(event.data.name === "generator"){
+				worker.postMessage({ name:"population", data: { number: 50 } });
+			}
+			if(event.data.name === "population"){
+				worker.postMessage({ name:"evolver" , data: { fn: optimize }});
+			}
+			if(event.data.name === "evolver"){
+				worker.postMessage({ name:"start" , data: { type: "evolve", arg: 7 }});
+			}
 			if(event.data.name === "start") {
 				// plot best, if found
 				if(!event.data.data.err && event.data.data.result){
 					var best = eval('(function(){ return (' + event.data.data.result.best + ');})()');
 					var bestData = testValues.map(function(i){ return [i, best(i)];});
 
-					$.plot($('#plot'), [{label:"original", data:original, points:{ show:true }}, {label:"best", data:bestData}]);
+					status.html('Ok! Try again!');
+					
+					$.plot(plot, [{label:"original", data:original, points:{ show:true }}, {label:"best", data:bestData}]);
 				}
 			}
 		}, false);
 
-		thread.postMessage({ name:"load", data: { }});
-		
+		// Start task ...
+		go = function(){
+			worker.postMessage({ name:"load", data: { }});
+			status.html('Wait for it ...');
+		};
+		go();
 		
 		hideOrShowLogs = (function(){
 			// First run, set text and hide
@@ -76,6 +98,8 @@
 		<h2>Approximate numerical function R -> R</h2>
 		<div id="parameters"></div>
 		<div id="plot" style="width:600px;height:300px"></div>
+		<b><div id="status"></div></b>
+		<a id="try" href="javascript:go()">Try!</a><br/ >
 		<a id="hide-show-logs-a" href="javascript:hideOrShowLogs()"></a>
 		<div id="logs">
 			<i>If the best error is something like 4.440892098500626e-16, one can say that we matched the original function!</i><br/ >
