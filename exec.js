@@ -85,24 +85,15 @@ addEventListener("message", function(event){
 								maxDepth: maxDepth
 							},
 							{
-								error : (function(){												
-												var fn = eval('(function(){ return (' + event.data.data.fn + '); })()')
-												var idx = new Array(20), data = new Array(20);
-												for(var i = -1, y = 0; i <=1; i+=0.1, ++y){
-													idx[y] = i;
-												}
-												data = idx.map(fn);
-
-												return function(i){
-													var genred = eval(i.compile());
-													var test = idx.map(genred);
-													return test.map(function(i, idx){ 
-															return Math.abs( i - data[idx] ); 
-													}).reduce(function(t,i){
-															return t + i; 
-													}, 0);
-												};											
-											})()
+								error : function(i){
+											var genred = eval(i.compile());
+											var test = event.data.data.inputValues.map(genred);
+											return test.map(function(i, idx){ 
+													return Math.abs( i - event.data.data.testValues[idx] ); 
+											}).reduce(function(t,i){
+													return t + i; 
+											}, 0);
+										}
 							}, 
 							population);
 					//--
