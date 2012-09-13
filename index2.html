@@ -146,10 +146,12 @@
 						console.log(event.data.data);
 					}
 					
-					setTimeout(function(){
-						worker.postMessage({name: "applyForce", data: { id: 'triangle1', degrees: Math.random(360), power: 0.01}});
+					setTimeout(function __tagTimeout(){
+						worker.postMessage({name: "applyForce", data: { id: 'triangle1', degrees: Math.random(360), power: 0.10}});
 						worker.postMessage({name: "applyImpulse", data: { id: 'circle1', degrees: Math.random(360), power: 0.01}});
-					}, 200);					
+						
+						setTimeout(__tagTimeout, 1000);
+					}, 1000);
 					
 				
 				}); // worker.addEventListener(function(event){ ...
