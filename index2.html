@@ -1,0 +1,139 @@
+<html>
+	<head>		
+		<script src="vendors/kinetic-v4.0.1.min.js"></script>
+		<script src="vendors/jquery-1.8.1.min.js"></script>
+		<script src="2dgameeng.js"></script>
+	</head>
+	<body>
+		<a id='starter' href="#">Start!</a>
+		<div id="canvas-world">
+		</div>
+		<script>
+			var worker = new Worker('exec2.js');
+			// kinetic
+			var stage, layer;
+
+			$(function(){
+				stage = new Kinetic.Stage({
+					container: "canvas-world",
+					width: 900,
+					height: 600
+				});
+				layer = new Kinetic.Layer();
+
+				(function(){
+					var background = new Kinetic.Rect({
+						x: 0,
+						y: 0,
+						width: stage.getWidth(),
+						height: stage.getHeight(),
+						fill: "black",
+					});					
+					layer.add(background);					
+				})();
+
+				var entities = {};
+				entities['circle1'] = { 
+					type:'circle', 
+					radius:10, 
+					x: 100, 
+					y: 100, 
+					angle:0, 
+					id: 'circle1'};
+				entities['triangle1'] = {
+					type:'polygon',
+					points:[{x: 1, y: 1}, {x: 31, y: 1}, {x: 1, y: 61}],
+					x: 120,
+					y: 120,
+					angle: 0,
+					id: 'triangle1'
+				};
+
+				worker.addEventListener('message', function(event){					
+					if(event.data.err){
+						console.log('ERROR:', event.data);
+						return;
+					}
+					
+					if(event.data.name === 'update') {
+						var newData = event.data.data;
+						for(var id in newData){
+							entities[id].x = newData[id].x;
+							entities[id].y = newData[id].y;
+							entities[id].angle = newData[id].a;
+						}						
+					}					
+
+					if(event.data.name === 'create'){
+						worker.postMessage({name:'appendBodies', data:entities} );
+					}
+
+					if(event.data.name === 'appendBodies'){
+						worker.postMessage({name:'start', data:entities} );
+						
+						// After appending, attach the drawing function ... which also creates the visual
+						// representations ...
+						for(var k in entities){
+							(function(entity){
+							
+								entity.draw = (function(_this){
+									var obj;
+									if(_this.type === 'circle'){
+										obj = new Kinetic.Circle({
+											radius: _this.radius,
+											fill: "red",
+											stroke: "yellow",
+											strokeWidth: 2,
+											x: _this.x,
+											y: _this.y
+										});
+									} else if(_this.type === 'polygon'){
+										obj = new Kinetic.Polygon({
+											points: entity.points.map(function(e){ return [e.x, e.y]; }).reduce(function(t, i){ return t.concat(i)},[]),
+											fill: "red",
+											stroke: "yellow",
+											strokeWidth: 2,
+											x: _this.x,
+											y: _this.y
+										});
+									}
+
+									layer.add(obj);
+									obj.moveToTop();
+									
+									return function(){
+										obj.setX(_this.x);
+										obj.setY(_this.y);
+									}
+								})(entity);
+								
+							})(entities[k]);
+						}
+																		
+						stage.add(layer);
+						
+						// Start drawing!
+						var anim = new Kinetic.Animation({
+						  func: function(frame) {
+							for(var k in entities) {
+								entities[k].draw();
+							}
+						  },
+						  node: layer
+						});
+						anim.start();
+					}
+
+					if(event.data.name === 'debug'){
+						console.log(event.data.data);
+					}
+				});
+				
+				$('#starter').click(function(){ worker.postMessage({name:'create', data:{}}); });
+				
+			});
+			
+			
+		</script>
+	</body>
+</html>
