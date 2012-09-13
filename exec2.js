@@ -117,25 +117,51 @@ addEventListener('message', function(event){
 			world = new WorldClass(30, false, event.data.data.scale, event.data.data.width, event.data.data.height);
 		}catch(e){
 			err = e.toString();
-		}		
-
+		}
 	}
+
 	if(event.data.name === 'appendBodies'){
 		try{
 			world.appendBodies(event.data.data);
 		}catch(e){
 			err = e.toString();
 		}
-
 	}
+	
+	if(event.data.name === 'applyForce'){
+		try{
+			var data = event.data.data;
+			var body = world.bodies[data.id];
+			body.ApplyForce(new b2Vec2(
+					Math.cos(data.degrees * Math.PI / 180) * data.power, 
+					Math.sin(data.degrees * Math.PI / 180) * data.power), 
+					body.GetWorldCenter());
+		}catch(e){
+			err = e.toString();
+		}
+	}
+	
+	if(event.data.name === 'applyImpulse'){
+		try{
+			var data = event.data.data;
+			var body = world.bodies[data.id];
+			body.ApplyImpulse(new b2Vec2(
+					Math.cos(data.degrees * Math.PI / 180) * data.power, 
+					Math.sin(data.degrees * Math.PI / 180) * data.power), 
+					body.GetWorldCenter());
+		}catch(e){
+			err = e.toString();
+		}
+	}
+	
+	
 	if(event.data.name === 'start'){
 		try{
 			setInterval(loop, 1000/30);
 		}catch(e){
 			err = e.toString();
 		}
-
 	}
-	
+
 	postMessage({name:event.data.name, err:err});
 });

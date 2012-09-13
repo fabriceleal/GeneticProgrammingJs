@@ -146,6 +146,11 @@
 						console.log(event.data.data);
 					}
 					
+					setTimeout(function(){
+						worker.postMessage({name: "applyForce", data: { id: 'triangle1', degrees: Math.random(360), power: 0.01}});
+						worker.postMessage({name: "applyImpulse", data: { id: 'circle1', degrees: Math.random(360), power: 0.01}});
+					}, 200);					
+					
 				
 				}); // worker.addEventListener(function(event){ ...
 				
