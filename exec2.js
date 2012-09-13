@@ -14,14 +14,14 @@ var   b2Vec2 = Box2D.Common.Math.b2Vec2
 	 , b2PrismaticJointDef = Box2D.Dynamics.Joints.b2PrismaticJointDef
 	 , b2PrismaticJoint = Box2D.Dynamics.Joints.b2PrismaticJoint;
 
-var WorldClass = function(interval, adaptive){
+var WorldClass = function(interval, adaptive, scale){
 	this.interval = interval;
 	this.adaptive = adaptive;
 	this.lastTimestamp = Date.now();
 	this.world = new b2World(new b2Vec2(0, 10), true);
 	//this.world.SetContinuousPhysics(true);
 	
-	this.SCALE = 30;
+	this.SCALE = scale;
 	
 	this.bodyDef = new b2BodyDef();
 			
@@ -46,8 +46,8 @@ WorldClass.prototype.sendUpdate = function(){
 		if(typeof b.GetUserData() !== 'undefined' && b.GetUserData() !== null) {
 			data[b.GetUserData()] = {
 				id: b.GetUserData(),
-				x : b.GetPosition().x * this.SCALE,
-				y : b.GetPosition().y * this.SCALE,
+				x : b.GetPosition().x,
+				y : b.GetPosition().y,
 				a : b.GetAngle()
 			};
 		}
@@ -78,8 +78,8 @@ WorldClass.prototype.appendBodies = function(bodies){
 				world.fixDef.shape = new b2PolygonShape;
 				world.fixDef.shape.SetAsBox(entity.width / 2, entity.height / 2);
 			}
-			world.bodyDef.position.x = entity.x / world.SCALE;
-			world.bodyDef.position.y = entity.y / world.SCALE;
+			world.bodyDef.position.x = entity.x;
+			world.bodyDef.position.y = entity.y;
 			world.bodyDef.userData = entity.id;
 			world.world.CreateBody(world.bodyDef).CreateFixture(world.fixDef);
 			//postMessage({name:'debug', data:[k] });
@@ -100,7 +100,7 @@ addEventListener('message', function(event){
 	
 	if(event.data.name === 'create'){
 		try{
-			world = new WorldClass(30, false);
+			world = new WorldClass(30, false, event.data.data.scale);
 		}catch(e){
 			err = e.toString();
 		}		

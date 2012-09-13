@@ -14,6 +14,8 @@
 			var stage, layer;
 
 			$(function(){
+				var SCALE = 30;
+				
 				stage = new Kinetic.Stage({
 					container: "canvas-world",
 					width: 900,
@@ -35,16 +37,16 @@
 				var entities = {};
 				entities['circle1'] = { 
 					type:'circle', 
-					radius:10, 
-					x: 100, 
-					y: 100, 
+					radius:10 / SCALE, 
+					x: 100 / SCALE, 
+					y: 100 / SCALE, 
 					angle:0, 
 					id: 'circle1'};
 				entities['triangle1'] = {
 					type:'polygon',
-					points:[{x: 1, y: 1}, {x: 31, y: 1}, {x: 1, y: 61}],
-					x: 120,
-					y: 120,
+					points:[{x: 1 / SCALE, y: 1 / SCALE}, {x: 31 / SCALE, y: 1 / SCALE}, {x: 1 / SCALE, y: 61 / SCALE}],
+					x: 120 / SCALE,
+					y: 120 / SCALE,
 					angle: 0,
 					id: 'triangle1'
 				};
@@ -65,7 +67,7 @@
 					}					
 
 					if(event.data.name === 'create'){
-						worker.postMessage({name:'appendBodies', data:entities} );
+						worker.postMessage({name:'appendBodies', data:entities } );
 					}
 
 					if(event.data.name === 'appendBodies'){
@@ -80,21 +82,21 @@
 									var obj;
 									if(_this.type === 'circle'){
 										obj = new Kinetic.Circle({
-											radius: _this.radius,
+											radius: _this.radius * SCALE,
 											fill: "red",
 											stroke: "yellow",
 											strokeWidth: 2,
-											x: _this.x,
-											y: _this.y
+											x: _this.x * SCALE,
+											y: _this.y * SCALE
 										});
 									} else if(_this.type === 'polygon'){
 										obj = new Kinetic.Polygon({
-											points: entity.points.map(function(e){ return [e.x, e.y]; }).reduce(function(t, i){ return t.concat(i)},[]),
+											points: entity.points.map(function(e){ return [e.x * SCALE, e.y * SCALE]; }).reduce(function(t, i){ return t.concat(i)},[]),
 											fill: "red",
 											stroke: "yellow",
 											strokeWidth: 2,
-											x: _this.x,
-											y: _this.y
+											x: _this.x * SCALE,
+											y: _this.y * SCALE
 										});
 									}
 
@@ -102,8 +104,10 @@
 									obj.moveToTop();
 									
 									return function(){
-										obj.setX(_this.x);
-										obj.setY(_this.y);
+										if(_this.type === 'circle') console.log(_this.x, _this.y);
+										
+										obj.setX(_this.x * SCALE);
+										obj.setY(_this.y * SCALE);
 									}
 								})(entity);
 								
@@ -129,7 +133,7 @@
 					}
 				});
 				
-				$('#starter').click(function(){ worker.postMessage({name:'create', data:{}}); });
+				$('#starter').click(function(){ worker.postMessage({name:'create', data:{ scale: SCALE }}); });
 				
 			});
 			
