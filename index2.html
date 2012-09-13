@@ -42,6 +42,17 @@
 					y: 100 / SCALE, 
 					angle:0, 
 					id: 'circle1'};
+				//---
+				/*for(var i = 2; i < 10; ++i){
+					entities['circle' + i] = { 
+						type:'circle', 
+						radius:10 / SCALE, 
+						x: Math.random(450) / SCALE, 
+						y: Math.random(300) / SCALE, 
+						angle:0, 
+						id: 'circle' + i};				
+				}*/
+				
 				entities['triangle1'] = {
 					type:'polygon',
 					points:[{x: 1 / SCALE, y: 1 / SCALE}, {x: 31 / SCALE, y: 1 / SCALE}, {x: 1 / SCALE, y: 61 / SCALE}],
@@ -49,7 +60,7 @@
 					y: 120 / SCALE,
 					angle: 0,
 					id: 'triangle1'
-				};
+				};/**/
 
 				worker.addEventListener('message', function(event){					
 					if(event.data.err){
@@ -79,7 +90,8 @@
 							(function(entity){
 							
 								entity.draw = (function(_this){
-									var obj;
+									var obj, angle = _this.angle;
+									
 									if(_this.type === 'circle'){
 										obj = new Kinetic.Circle({
 											radius: _this.radius * SCALE,
@@ -104,10 +116,12 @@
 									obj.moveToTop();
 									
 									return function(){
-										if(_this.type === 'circle') console.log(_this.x, _this.y);
-										
+																				
 										obj.setX(_this.x * SCALE);
 										obj.setY(_this.y * SCALE);
+										obj.rotate( _this.angle - angle );
+										
+										angle = _this.angle;
 									}
 								})(entity);
 								
@@ -131,11 +145,13 @@
 					if(event.data.name === 'debug'){
 						console.log(event.data.data);
 					}
-				});
+					
 				
-				$('#starter').click(function(){ worker.postMessage({name:'create', data:{ scale: SCALE }}); });
+				}); // worker.addEventListener(function(event){ ...
 				
-			});
+				$('#starter').click(function(){ worker.postMessage({name:'create', data:{ scale: SCALE, width: 900 /*stage.GetWidth()*/, height: 600 /*stage.getHeight()*/ }}); });
+				
+			}); // $(function(){ ...
 			
 			
 		</script>

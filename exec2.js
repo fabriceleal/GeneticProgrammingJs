@@ -14,7 +14,7 @@ var   b2Vec2 = Box2D.Common.Math.b2Vec2
 	 , b2PrismaticJointDef = Box2D.Dynamics.Joints.b2PrismaticJointDef
 	 , b2PrismaticJoint = Box2D.Dynamics.Joints.b2PrismaticJoint;
 
-var WorldClass = function(interval, adaptive, scale){
+var WorldClass = function(interval, adaptive, scale, width, height){
 	this.interval = interval;
 	this.adaptive = adaptive;
 	this.lastTimestamp = Date.now();
@@ -29,6 +29,18 @@ var WorldClass = function(interval, adaptive, scale){
 	this.fixDef.density = 1.0;
 	this.fixDef.friction = 0.5;
 	this.fixDef.restitution = 0.2;
+	
+	this.bodies = {};
+	
+	// Create Ground (to test collision)
+	var bodyDef = new b2BodyDef();
+	var fixDef = new b2FixtureDef();
+	bodyDef.type = b2Body.b2_staticBody;
+	bodyDef.position.x = width / 2 / this.SCALE;
+	bodyDef.position.y = height / this.SCALE;
+	fixDef.shape = new b2PolygonShape;
+	fixDef.shape.SetAsBox(width / this.SCALE / 2, (10/this.SCALE) / 2);
+	this.world.CreateBody(bodyDef).CreateFixture(fixDef);
 };
 
 WorldClass.prototype.update = function(){
@@ -59,30 +71,32 @@ WorldClass.prototype.appendBodies = function(bodies){
 	//postMessage({name:'debug', data:bodies });
 	this.ready = false;
 	this.bodyDef.type = b2Body.b2_dynamicBody;
-	var world = this;
+	var _this = this;
 	for(var k in bodies){		
 		(function(entity){
 			if(entity.type === 'circle'){
-				world.fixDef.shape = new b2CircleShape(entity.radius);
+				_this.fixDef.shape = new b2CircleShape(entity.radius);
 			} else if(entity.type === 'polygon'){
 				var points = entity.points.map(function(p){
 					var v = new b2Vec2(); 
 					v.Set(p.x, p.y); 
 					return v;
 				});
-				world.fixDef.shape = new b2PolygonShape();
-				postMessage({name:'debug', data:['hello', points.length]});
-				world.fixDef.shape.SetAsArray(points, points.length);
-				postMessage({name:'debug', data:['hello 2']});
+				_this.fixDef.shape = new b2PolygonShape();
+				//postMessage({name:'debug', data:['hello', points.length]});
+				_this.fixDef.shape.SetAsArray(points, points.length);
+				//postMessage({name:'debug', data:['hello 2']});
 			} else if(entity.type === 'box'){
-				world.fixDef.shape = new b2PolygonShape;
-				world.fixDef.shape.SetAsBox(entity.width / 2, entity.height / 2);
+				_this.fixDef.shape = new b2PolygonShape;
+				_this.fixDef.shape.SetAsBox(entity.width / 2, entity.height / 2);
 			}
-			world.bodyDef.position.x = entity.x;
-			world.bodyDef.position.y = entity.y;
-			world.bodyDef.userData = entity.id;
-			world.world.CreateBody(world.bodyDef).CreateFixture(world.fixDef);
-			//postMessage({name:'debug', data:[k] });
+			_this.bodyDef.position.x = entity.x;
+			_this.bodyDef.position.y = entity.y;
+			_this.bodyDef.userData = entity.id;
+			
+			var body = _this.world.CreateBody(_this.bodyDef);
+			_this.bodies[ entity.id ] = body;
+			body.CreateFixture(_this.fixDef);
 		})(bodies[k]);		
 	}
 	this.ready = true;
@@ -100,7 +114,7 @@ addEventListener('message', function(event){
 	
 	if(event.data.name === 'create'){
 		try{
-			world = new WorldClass(30, false, event.data.data.scale);
+			world = new WorldClass(30, false, event.data.data.scale, event.data.data.width, event.data.data.height);
 		}catch(e){
 			err = e.toString();
 		}		
