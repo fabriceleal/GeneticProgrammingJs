@@ -32,15 +32,32 @@ var WorldClass = function(interval, adaptive, scale, width, height){
 	
 	this.bodies = {};
 	
-	// Create Ground (to test collision)
+	// Create Ground / Ceilling / Walls (to test collision)
 	var bodyDef = new b2BodyDef();
 	var fixDef = new b2FixtureDef();
 	bodyDef.type = b2Body.b2_staticBody;
+	fixDef.shape = new b2PolygonShape;
+
 	bodyDef.position.x = width / 2 / this.SCALE;
 	bodyDef.position.y = height / this.SCALE;
-	fixDef.shape = new b2PolygonShape;
 	fixDef.shape.SetAsBox(width / this.SCALE / 2, (10/this.SCALE) / 2);
 	this.world.CreateBody(bodyDef).CreateFixture(fixDef);
+
+/*	bodyDef.position.x = 0;
+	bodyDef.position.y = 0;
+	fixDef.shape.SetAsBox(width / this.SCALE / 2, (10/this.SCALE) / 2);
+	this.world.CreateBody(bodyDef).CreateFixture(fixDef);
+*/
+	bodyDef.position.x = width / this.SCALE;
+	bodyDef.position.y = height / 2 / this.SCALE;
+	fixDef.shape.SetAsBox((10/this.SCALE) / 2, width / this.SCALE / 2);
+	this.world.CreateBody(bodyDef).CreateFixture(fixDef);
+
+	bodyDef.position.x = 0;
+	bodyDef.position.y = height / 2 / this.SCALE;
+	fixDef.shape.SetAsBox((10/this.SCALE) / 2, width / this.SCALE / 2);
+	this.world.CreateBody(bodyDef).CreateFixture(fixDef);
+
 };
 
 WorldClass.prototype.update = function(){
@@ -107,7 +124,8 @@ var loop = function(){
 	if(world.ready){
 		world.update();
 	}
-}
+};
+var intervalId;
 
 addEventListener('message', function(event){
 	var err;
@@ -157,7 +175,16 @@ addEventListener('message', function(event){
 	
 	if(event.data.name === 'start'){
 		try{
-			setInterval(loop, 1000/30);
+			intervalId = setInterval(loop, 1000/30);
+		}catch(e){
+			err = e.toString();
+		}
+	}
+	
+	if(event.data.name === 'close'){
+		try{
+			close();
+			clearInterval(intervalId);
 		}catch(e){
 			err = e.toString();
 		}
