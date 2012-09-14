@@ -4,19 +4,13 @@
 		<script src="vendors/jquery-1.8.1.min.js"></script>
 		<script src="2dgameeng.js"></script>
 		<script src="vendors/stats.js"></script>
-	</head>
-	<body>
-		<a id='starter' href="#">Start!</a>
-		<a id='stopper' href="#">Stop!</a><br />
-		<a id='profile-start' href='#'>Start profile</a>
-		<a id='profile-stop' href='#'>Stop profile</a>
-		<div id="canvas-world">
-		</div>
 		<script>
 			var worker;
 			// kinetic
 			var stage, layer, anim;
 			var stats;
+			
+			var selected;
 
 			$(function(){
 				var SCALE = 30;
@@ -25,7 +19,9 @@
 				$('#profile-stop').click(function(){ console.profileEnd(); });
 				
 				stats = new Stats();					
-				document.body.appendChild(stats.domElement);				
+				$('#stats')[0].appendChild(stats.domElement);
+				
+				var selectedInfo = $('#selected-info');
 				
 				stage = new Kinetic.Stage({
 					container: "canvas-world",
@@ -44,6 +40,9 @@
 					});					
 					layer.add(background);					
 				})();
+				layer.on('mousedown', function(evt){
+					selectedInfo.html('');
+				});
 
 				var entities = {};
 				entities['circle1'] = { 
@@ -132,7 +131,19 @@
 											y: _this.y * SCALE
 										});
 									}
+									
+									if(! obj)
+										throw 'No object!';
 
+									obj.on('mousedown', function(evt){
+										// Select!
+										selected = obj;
+										// Cancel from propagating upwards
+										evt.cancelBubble = true;
+										
+										selectedInfo.html('Selected is ' + _this.id + ', <br/ > here: ' + obj.getX() + ', ' + obj.getY() )
+									});
+																		
 									layer.add(obj);
 									obj.moveToTop();
 									
@@ -179,7 +190,7 @@
 						});
 						anim.start();
 					}
-
+					
 					if(event.data.name === 'debug'){
 						console.log(event.data.data);
 					}
@@ -212,6 +223,15 @@
 			
 			
 		</script>
+	</head>
+	<body>
+		May work better on chrome ...<br/ >
+		<a id='starter' href="#">Start!</a>
+		<a id='stopper' href="#">Stop!</a><br />
+		<a id='profile-start' href='#'>Start profile</a>
+		<a id='profile-stop' href='#'>Stop profile</a>
 		<div id="stats"></div>
+		<div id="canvas-world" style="float: left;"></div>
+		<div id="selected-info" style="float: left;"></div>
 	</body>
 </html>

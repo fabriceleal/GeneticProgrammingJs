@@ -43,11 +43,6 @@ var WorldClass = function(interval, adaptive, scale, width, height){
 	fixDef.shape.SetAsBox(width / this.SCALE / 2, (10/this.SCALE) / 2);
 	this.world.CreateBody(bodyDef).CreateFixture(fixDef);
 
-/*	bodyDef.position.x = 0;
-	bodyDef.position.y = 0;
-	fixDef.shape.SetAsBox(width / this.SCALE / 2, (10/this.SCALE) / 2);
-	this.world.CreateBody(bodyDef).CreateFixture(fixDef);
-*/
 	bodyDef.position.x = width / this.SCALE;
 	bodyDef.position.y = height / 2 / this.SCALE;
 	fixDef.shape.SetAsBox((10/this.SCALE) / 2, width / this.SCALE / 2);
@@ -132,6 +127,9 @@ addEventListener('message', function(event){
 	
 	if(event.data.name === 'create'){
 		try{
+			if(world)
+				throw 'world is already created!';
+
 			world = new WorldClass(30, false, event.data.data.scale, event.data.data.width, event.data.data.height);
 		}catch(e){
 			err = e.toString();
