@@ -93,7 +93,13 @@
 					}					
 
 					if(event.data.name === 'create'){
-						worker.postMessage({name:'appendBodies', data:entities } );
+						try{
+							worker.postMessage({name:'appendBodies', data:entities } );
+						}catch(e){
+							console.warn('Error append bodies to world. Check the entities object: ');
+							console.log(JSON.stringify(entities));
+							console.error(e);
+						}
 					}
 
 					if(event.data.name === 'appendBodies'){
