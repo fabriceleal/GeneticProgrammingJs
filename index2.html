@@ -4,23 +4,22 @@
 		<script src="vendors/jquery-1.8.1.min.js"></script>
 		<script src="vendors/stats.js"></script>
 		<script>
-			var worker;
-			// kinetic
-			var stage, layer, anim;
-			var stats;
-			
-			var selected;
-
 			$(function(){
+				var worker;
+				// kinetic
+				var stage, layer, anim;
+				var stats;
+				
+				var selected;
 				var SCALE = 30;
+				
+				var selectedInfo = $('#selected-info');
 				
 				$('#profile-start').click(function(){ console.profile('Profile ...'); });
 				$('#profile-stop').click(function(){ console.profileEnd(); });
 				
 				stats = new Stats();					
 				$('#stats')[0].appendChild(stats.domElement);
-				
-				var selectedInfo = $('#selected-info');
 				
 				stage = new Kinetic.Stage({
 					container: "canvas-world",
@@ -37,61 +36,83 @@
 						height: stage.getHeight(),
 						fill: "black",
 					});					
-					layer.add(background);					
+					layer.add(background);
 				})();
+				
 				layer.on('mousedown', function(evt){
 					selectedInfo.html('');
 				});
 
-				var entities = {};
-				entities['circle1'] = { 
-					type:'circle', 
-					radius:10 / SCALE, 
-					x: 100 / SCALE, 
-					y: 100 / SCALE, 
-					angle:0, 
-					id: 'circle1'};
-				//---
-				for(var i = 2; i < 200; ++i){
+				var entities = {};				
+				/*for(var i = 1; i < 50; ++i){
 					entities['circle' + i] = { 
 						type:'circle', 
-						radius:10 / SCALE, 
+						radius:2 / SCALE, 
 						x: Math.random() * 450 / SCALE, 
 						y: Math.random() * 300 / SCALE, 
 						angle:0, 
 						id: 'circle' + i};				
-				}/**/
+				}*/
+				for(var i = 1; i < 50; ++i){
+					entities['triangle' + i] = {
+						type:'polygon',
+						color: i % 2 ? 'blue' : 'red',
+						points:[{x: 0 / SCALE, y: 0 / SCALE}, {x: 10 / SCALE, y: 0 / SCALE}, {x: 0 / SCALE, y: 15 / SCALE}],
+						x: Math.random() * 450 / SCALE,
+						y: Math.random() * 300 / SCALE,
+						angle: 0,
+						id: 'triangle' + i
+					};
+				}
 				
-				entities['triangle1'] = {
-					type:'polygon',
-					points:[{x: 1 / SCALE, y: 1 / SCALE}, {x: 31 / SCALE, y: 1 / SCALE}, {x: 1 / SCALE, y: 61 / SCALE}],
-					x: 120 / SCALE,
-					y: 120 / SCALE,
-					angle: 0,
-					id: 'triangle1'
-				};/**/
-
+				/*
+				var unrolledUpdate = '';
+				for(var id in entities){
+					unrolledUpdate += "current = data['" + id + "'];\n";
+					unrolledUpdate += "entity = entities['" + id + "'];\n";
+					unrolledUpdate += "entity.x = current.x;\n";
+					unrolledUpdate += "entity.y = current.y;\n";
+				}
+				
+				var updateAll = eval('(function(){ return function(data, entities){var current, entity;\n' + unrolledUpdate + ' } })()')
+				
+				delete unrolledUpdate;
+				*/
 				worker = new Worker('exec2.js');
 				worker.addEventListener('error', function(e){
 					console.warn('Error!');
 					console.error(e);
 				});
-				worker.addEventListener('message', function(event){					
-					if(event.data.err){
-						console.log('ERROR:', event.data);
+				worker.addEventListener('message', function(event){						
+					var data = event.data;
+					var __name = data.name;
+					var __data = data.data;
+					var __err = data.err;
+					
+					if(__err){
+						console.log('ERROR:', data);
 						return;
 					}
 					
-					if(event.data.name === 'update') {
-						var newData = event.data.data;
-						for(var id in newData){
-							entities[id].x = newData[id].x;
-							entities[id].y = newData[id].y;
-							entities[id].angle = newData[id].a;
-						}						
-					}					
+					if(__name === 'update') {
+						var current, entity;
+						
+						// FIXME: Unroll this.						
+						for(var id in __data){
+							current = __data[id];
+							entity = entities[id];
+							
+							entity.x = current.x;
+							entity.y = current.y;
+							entity.angle = current.a;
+						}
+						
+						//eval(unrolledUpdate);
+						
+						//updateAll(__data, entities);
+					}
 
-					if(event.data.name === 'create'){
+					if(__name === 'create'){
 						try{
 							worker.postMessage({name:'appendBodies', data:entities } );
 						}catch(e){
@@ -101,11 +122,11 @@
 						}
 					}
 
-					if(event.data.name === 'appendBodies'){
+					if(__name === 'appendBodies'){
 						worker.postMessage({name:'start', data:entities} );
 					}
 					
-					if(event.data.name === 'start'){
+					if(__name === 'start'){
 						// After appending, attach the drawing function ... which also creates the visual
 						// representations ...
 						for(var k in entities){
@@ -129,9 +150,9 @@
 									} else if(_this.type === 'polygon'){
 										obj = new Kinetic.Polygon({
 											points: entity.points.map(function(e){ return [e.x * SCALE, e.y * SCALE]; }).reduce(function(t, i){ return t.concat(i)},[]),
-											fill: "red",
-											stroke: "yellow",
-											strokeWidth: 2,
+											fill: _this.color, //"red",
+											//stroke: "yellow",
+											//strokeWidth: 2,
 											x: _this.x * SCALE,
 											y: _this.y * SCALE
 										});
@@ -146,7 +167,16 @@
 										// Cancel from propagating upwards
 										evt.cancelBubble = true;
 										
-										selectedInfo.html('Selected is ' + _this.id + ', <br/ > here: ' + obj.getX() + ', ' + obj.getY() )
+										selectedInfo.html(
+												'Selected is ' + _this.id + ', <br/ > here: ' + obj.getX() + ', ' + obj.getY() + 
+												'<br/><a id="force" href="#">Apply force!</a><br/ ><a id="impulse" href="#">Apply impulse!</a>');
+										
+										$('#force').click(function(){
+											worker.postMessage({name: "applyForce", data: { id: _this.id, degrees: (Math.random()*360 - 180), power: 1}});
+										})
+										$('#impulse').click(function(){
+											worker.postMessage({name: "applyImpulse", data: { id: _this.id, degrees: (Math.random()*360 - 180), power: 1}});
+										})
 									});
 																		
 									layer.add(obj);
@@ -181,12 +211,14 @@
 										if(ready){
 											ready = false;
 
+											// Draw all entities ...
+											// FIXME: Unroll this.
 											for(var k in entities) {
 												entities[k].draw();
 											}
 
 											stats.update();
-											
+
 											ready = true;
 										}
 									};
@@ -196,17 +228,9 @@
 						anim.start();
 					}
 					
-					if(event.data.name === 'debug'){
-						console.log(event.data.data);
+					if(__name === 'debug'){
+						console.log(__data);
 					}
-					
-					/*setTimeout(function __tagTimeout(){
-						worker.postMessage({name: "applyForce", data: { id: 'triangle1', degrees: (Math.random(360) - 180), power: 0.10}});
-						worker.postMessage({name: "applyImpulse", data: { id: 'circle1', degrees: (Math.random(360) - 180), power: 0.01}});
-						
-						setTimeout(__tagTimeout, 1000);
-					}, 1000);*/
-					
 				
 				}); // worker.addEventListener(function(event){ ...
 				

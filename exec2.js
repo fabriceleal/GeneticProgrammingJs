@@ -18,7 +18,7 @@ var WorldClass = function(interval, adaptive, scale, width, height){
 	this.interval = interval;
 	this.adaptive = adaptive;
 	this.lastTimestamp = Date.now();
-	this.world = new b2World(new b2Vec2(0, 10), true);
+	this.world = new b2World(new b2Vec2(0, /*1*/0), true);
 	//this.world.SetContinuousPhysics(true);
 	
 	this.SCALE = scale;
@@ -43,6 +43,11 @@ var WorldClass = function(interval, adaptive, scale, width, height){
 	fixDef.shape.SetAsBox(width / this.SCALE / 2, (10/this.SCALE) / 2);
 	this.world.CreateBody(bodyDef).CreateFixture(fixDef);
 
+	bodyDef.position.x = width / 2 / this.SCALE;
+	bodyDef.position.y = 0;
+	fixDef.shape.SetAsBox(width / this.SCALE / 2, (10/this.SCALE) / 2);
+	this.world.CreateBody(bodyDef).CreateFixture(fixDef);
+	
 	bodyDef.position.x = width / this.SCALE;
 	bodyDef.position.y = height / 2 / this.SCALE;
 	fixDef.shape.SetAsBox((10/this.SCALE) / 2, width / this.SCALE / 2);
@@ -83,33 +88,35 @@ WorldClass.prototype.appendBodies = function(bodies){
 	//postMessage({name:'debug', data:bodies });
 	this.ready = false;
 	this.bodyDef.type = b2Body.b2_dynamicBody;
-	var _this = this;
+	//var _this = this;
+	
+	var entity, body;
+	
 	for(var k in bodies){		
-		(function(entity){
-			if(entity.type === 'circle'){
-				_this.fixDef.shape = new b2CircleShape(entity.radius);
-			} else if(entity.type === 'polygon'){
-				var points = entity.points.map(function(p){
-					var v = new b2Vec2(); 
-					v.Set(p.x, p.y); 
-					return v;
-				});
-				_this.fixDef.shape = new b2PolygonShape();
-				//postMessage({name:'debug', data:['hello', points.length]});
-				_this.fixDef.shape.SetAsArray(points, points.length);
-				//postMessage({name:'debug', data:['hello 2']});
-			} else if(entity.type === 'box'){
-				_this.fixDef.shape = new b2PolygonShape;
-				_this.fixDef.shape.SetAsBox(entity.width / 2, entity.height / 2);
-			}
-			_this.bodyDef.position.x = entity.x;
-			_this.bodyDef.position.y = entity.y;
-			_this.bodyDef.userData = entity.id;
-			
-			var body = _this.world.CreateBody(_this.bodyDef);
-			_this.bodies[ entity.id ] = body;
-			body.CreateFixture(_this.fixDef);
-		})(bodies[k]);		
+		entity = bodies[k];
+		if(entity.type === 'circle'){
+			this.fixDef.shape = new b2CircleShape(entity.radius);
+		} else if(entity.type === 'polygon'){
+			var points = entity.points.map(function(p){
+				var v = new b2Vec2(); 
+				v.Set(p.x, p.y); 
+				return v;
+			});
+			this.fixDef.shape = new b2PolygonShape();
+			//postMessage({name:'debug', data:['hello', points.length]});
+			this.fixDef.shape.SetAsArray(points, points.length);
+			//postMessage({name:'debug', data:['hello 2']});
+		} else if(entity.type === 'box'){
+			this.fixDef.shape = new b2PolygonShape;
+			this.fixDef.shape.SetAsBox(entity.width / 2, entity.height / 2);
+		}
+		this.bodyDef.position.x = entity.x;
+		this.bodyDef.position.y = entity.y;
+		this.bodyDef.userData = entity.id;
+		
+		body = this.world.CreateBody(this.bodyDef);
+		this.bodies[ entity.id ] = body;
+		body.CreateFixture(this.fixDef);
 	}
 	this.ready = true;
 };
@@ -124,13 +131,16 @@ var intervalId;
 
 addEventListener('message', function(event){
 	var err;
+	var data = event.data;
+	var __name = data.name;
+	var __data = data.data;
 	
-	if(event.data.name === 'create'){
+	if(__name === 'create'){
 		try{
 			if(world)
 				throw 'world is already created!';
 
-			world = new WorldClass(30, false, event.data.data.scale, event.data.data.width, event.data.data.height);
+			world = new WorldClass(30, false, __data.scale, __data.width, __data.height);
 		}catch(e){
 			err = e.toString();
 		}
@@ -138,32 +148,30 @@ addEventListener('message', function(event){
 
 	if(event.data.name === 'appendBodies'){
 		try{
-			world.appendBodies(event.data.data);
+			world.appendBodies(__data);
 		}catch(e){
 			err = e.toString();
 		}
 	}
 	
-	if(event.data.name === 'applyForce'){
-		try{
-			var data = event.data.data;
-			var body = world.bodies[data.id];
+	if(__name === 'applyForce'){
+		try{			
+			var body = world.bodies[__data.id];
 			body.ApplyForce(new b2Vec2(
-					Math.cos(data.degrees * Math.PI / 180) * data.power, 
-					Math.sin(data.degrees * Math.PI / 180) * data.power), 
+					Math.cos(__data.degrees * Math.PI / 180) * __data.power, 
+					Math.sin(__data.degrees * Math.PI / 180) * __data.power), 
 					body.GetWorldCenter());
 		}catch(e){
 			err = e.toString();
 		}
 	}
 	
-	if(event.data.name === 'applyImpulse'){
-		try{
-			var data = event.data.data;
-			var body = world.bodies[data.id];
+	if(__name === 'applyImpulse'){
+		try{			
+			var body = world.bodies[__data.id];			
 			body.ApplyImpulse(new b2Vec2(
-					Math.cos(data.degrees * Math.PI / 180) * data.power, 
-					Math.sin(data.degrees * Math.PI / 180) * data.power), 
+					Math.cos(__data.degrees * Math.PI / 180) * __data.power, 
+					Math.sin(__data.degrees * Math.PI / 180) * __data.power), 
 					body.GetWorldCenter());
 		}catch(e){
 			err = e.toString();
@@ -171,7 +179,7 @@ addEventListener('message', function(event){
 	}
 	
 	
-	if(event.data.name === 'start'){
+	if(__name === 'start'){
 		try{
 			intervalId = setInterval(loop, 1000/30);
 		}catch(e){
@@ -179,7 +187,7 @@ addEventListener('message', function(event){
 		}
 	}
 	
-	if(event.data.name === 'close'){
+	if(__name === 'close'){
 		try{
 			close();
 			clearInterval(intervalId);
@@ -188,5 +196,5 @@ addEventListener('message', function(event){
 		}
 	}
 
-	postMessage({name:event.data.name, err:err});
+	postMessage({name:__name, err:err});
 });
