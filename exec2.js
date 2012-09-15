@@ -31,7 +31,7 @@ var WorldClass = function(interval, adaptive, scale, width, height){
 	this.fixDef.restitution = 0.2;
 	
 	this.bodies = {};
-	
+
 	// Create Ground / Ceilling / Walls (to test collision)
 	var bodyDef = new b2BodyDef();
 	var fixDef = new b2FixtureDef();
@@ -58,6 +58,32 @@ var WorldClass = function(interval, adaptive, scale, width, height){
 	fixDef.shape.SetAsBox((10/this.SCALE) / 2, width / this.SCALE / 2);
 	this.world.CreateBody(bodyDef).CreateFixture(fixDef);
 
+	this.world.SetContactListener({
+		BeginContact: function(contact){
+			//postMessage({name:'debug', data:'begin contact'});
+		},
+		EndContact : function(contact){	
+			//postMessage({name:'debug', data:'end contact'});
+		},
+		PreSolve : function(contact, oldManifold){
+			if(contact.IsTouching()){
+				var bodya = contact.GetFixtureA().GetBody().GetUserData();
+				var bodyb = contact.GetFixtureB().GetBody().GetUserData();
+				
+				if(bodya){
+					
+				}
+				if(bodyb){
+					
+				}
+				//postMessage({name:'debug', data:'pre solve'});
+			}
+		},
+		PostSolve : function(contact, impulse){
+			//postMessage({name:'debug', data:'post contact'});
+		}
+	}
+	);
 };
 
 WorldClass.prototype.update = function(){
@@ -88,6 +114,8 @@ WorldClass.prototype.appendBodies = function(bodies){
 	//postMessage({name:'debug', data:bodies });
 	this.ready = false;
 	this.bodyDef.type = b2Body.b2_dynamicBody;
+	this.bodyDef.allowSleep = true;
+	this.bodyDef.awake = false;
 	//var _this = this;
 	
 	var entity, body;
@@ -160,7 +188,7 @@ addEventListener('message', function(event){
 			body.ApplyForce(new b2Vec2(
 					Math.cos(__data.degrees * Math.PI / 180) * __data.power, 
 					Math.sin(__data.degrees * Math.PI / 180) * __data.power), 
-					body.GetWorldCenter());
+					body.GetWorldCenter()); // GetLocalCenter
 		}catch(e){
 			err = e.toString();
 		}
@@ -172,7 +200,7 @@ addEventListener('message', function(event){
 			body.ApplyImpulse(new b2Vec2(
 					Math.cos(__data.degrees * Math.PI / 180) * __data.power, 
 					Math.sin(__data.degrees * Math.PI / 180) * __data.power), 
-					body.GetWorldCenter());
+					body.GetWorldCenter()); // GetLocalCenter
 		}catch(e){
 			err = e.toString();
 		}

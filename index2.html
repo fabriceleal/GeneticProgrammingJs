@@ -53,10 +53,11 @@
 						angle:0, 
 						id: 'circle' + i};				
 				}*/
-				for(var i = 1; i < 50; ++i){
+				for(var i = 1; i < 200; ++i){
 					entities['triangle' + i] = {
 						type:'polygon',
 						color: i % 2 ? 'blue' : 'red',
+						// FIXME This might affect performance ...
 						points:[{x: 0 / SCALE, y: 0 / SCALE}, {x: 10 / SCALE, y: 0 / SCALE}, {x: 0 / SCALE, y: 15 / SCALE}],
 						x: Math.random() * 450 / SCALE,
 						y: Math.random() * 300 / SCALE,
