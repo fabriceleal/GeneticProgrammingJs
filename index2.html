@@ -203,17 +203,17 @@
 						}
 																		
 						stage.add(layer);
-						
+																		
 						// Start drawing!
 						anim = new Kinetic.Animation({
 						  func: (function(){
 									var ready = true;
-									return function(frame) {
+
+									return function (frame) {
 										if(ready){
 											ready = false;
 
-											// Draw all entities ...
-											// FIXME: Unroll this.
+											// Draw all entities ...											
 											for(var k in entities) {
 												entities[k].draw();
 											}
@@ -235,13 +235,22 @@
 				
 				}); // worker.addEventListener(function(event){ ...
 				
+				
 				// Ready to start ...
-				$('#starter').click(function(){ 
-					worker.postMessage({name:'create', data:{ scale: SCALE, width: 900 /*stage.GetWidth()*/, height: 600 /*stage.getHeight()*/ }}); 
+				$('#starter').click( function(){ 
+					worker.postMessage({
+							name:'create', 
+							data:{ 
+								scale: SCALE, 
+								width: 900, //stage.GetWidth()
+								height: 600 //stage.getHeight() 
+							}
+						}); 
+					//--
 					
 					// Remove onClick to starter...
 					$('#starter').click(function(){ });
-					 					
+
 					// Add onClick to stopper
 					$('#stopper').click(function(){
 						anim.stop();

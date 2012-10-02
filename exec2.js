@@ -88,7 +88,8 @@ var WorldClass = function(interval, adaptive, scale, width, height){
 
 WorldClass.prototype.update = function(){
 	var now = Date.now();
-	var stepRate = this.adaptive ? now - this.lastTimestamp / 1000 : (1 / this.interval);
+	var stepRate = (this.adaptive) ? ((now - this.lastTimestamp) / 1000) : (1 / this.interval);
+	
 	this.lastTimestamp = now;
 	this.world.Step(stepRate, 10, 10);
 	this.world.ClearForces();
@@ -168,7 +169,8 @@ addEventListener('message', function(event){
 			if(world)
 				throw 'world is already created!';
 
-			world = new WorldClass(30, false, __data.scale, __data.width, __data.height);
+			world = new WorldClass(30, true, __data.scale, __data.width, __data.height);
+
 		}catch(e){
 			err = e.toString();
 		}
