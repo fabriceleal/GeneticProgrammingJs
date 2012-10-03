@@ -12,7 +12,9 @@ var   b2Vec2 = Box2D.Common.Math.b2Vec2
 	 , b2CircleShape = Box2D.Collision.Shapes.b2CircleShape
 	 , b2DebugDraw = Box2D.Dynamics.b2DebugDraw
 	 , b2PrismaticJointDef = Box2D.Dynamics.Joints.b2PrismaticJointDef
-	 , b2PrismaticJoint = Box2D.Dynamics.Joints.b2PrismaticJoint;
+	 , b2PrismaticJoint = Box2D.Dynamics.Joints.b2PrismaticJoint
+	 , b2Transform = Box2D.Common.Math.b2Transform
+	 , b2RayCastInput = Box2D.Collision.b2RayCastInput;
 
 var WorldClass = function(interval, adaptive, scale, width, height){
 	this.interval = interval;
@@ -93,6 +95,25 @@ WorldClass.prototype.update = function(){
 	this.lastTimestamp = now;
 	this.world.Step(stepRate, 10, 10);
 	this.world.ClearForces();
+	
+	// raycast here?	
+	var t = new b2Transform();
+	t.SetIdentity();
+	
+	var i = new b2RayCastInput();
+	// Fix these ...
+	i.p1.Set(0.0, 0.0, 0.0);
+	i.p2.Set(1.0, 0.0, 0.0);
+	i.maxFraction = 1500000.0;
+	var o = {};	
+	
+	if (this.bodies['triangle1'].GetFixtureList() && this.bodies['triangle26'].GetFixtureList().GetShape().RayCast(o, i, t, 0)){
+		postMessage({ name: 'debug', data: true});
+
+	}
+	
+	//postMessage({ name: 'debug', data: {} });
+	
 	this.sendUpdate();
 };
 
@@ -146,6 +167,7 @@ WorldClass.prototype.appendBodies = function(bodies){
 		body = this.world.CreateBody(this.bodyDef);
 		this.bodies[ entity.id ] = body;
 		body.CreateFixture(this.fixDef);
+
 	}
 	this.ready = true;
 };

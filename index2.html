@@ -44,16 +44,8 @@
 				});
 
 				var entities = {};				
-				/*for(var i = 1; i < 50; ++i){
-					entities['circle' + i] = { 
-						type:'circle', 
-						radius:2 / SCALE, 
-						x: Math.random() * 450 / SCALE, 
-						y: Math.random() * 300 / SCALE, 
-						angle:0, 
-						id: 'circle' + i};				
-				}*/
-				for(var i = 1; i < 200; ++i){
+				
+				for(var i = 1; i < 50; ++i){
 					entities['triangle' + i] = {
 						type:'polygon',
 						color: i % 2 ? 'blue' : 'red',
@@ -66,19 +58,6 @@
 					};
 				}
 				
-				/*
-				var unrolledUpdate = '';
-				for(var id in entities){
-					unrolledUpdate += "current = data['" + id + "'];\n";
-					unrolledUpdate += "entity = entities['" + id + "'];\n";
-					unrolledUpdate += "entity.x = current.x;\n";
-					unrolledUpdate += "entity.y = current.y;\n";
-				}
-				
-				var updateAll = eval('(function(){ return function(data, entities){var current, entity;\n' + unrolledUpdate + ' } })()')
-				
-				delete unrolledUpdate;
-				*/
 				worker = new Worker('exec2.js');
 				worker.addEventListener('error', function(e){
 					console.warn('Error!');
@@ -242,8 +221,8 @@
 							name:'create', 
 							data:{ 
 								scale: SCALE, 
-								width: 900, //stage.GetWidth()
-								height: 600 //stage.getHeight() 
+								width: 900,
+								height: 600
 							}
 						}); 
 					//--
