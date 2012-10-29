@@ -41,8 +41,6 @@ addEventListener("message", function(event){
 
 					maxDepth = event.data.data.maxDepth;
 					generator = new madmonkey.Generator('number->number', [{ name: 'x', type:'number'}]);
-					//--
-
 					generator.addForm('(function(a,b){ return a+b;})', '(number,number)->number' );
 					generator.addForm('(function(a,b){ return a-b;})', '(number,number)->number' );
 					generator.addForm('(function(a,b){ return a*b;})', '(number,number)->number' );

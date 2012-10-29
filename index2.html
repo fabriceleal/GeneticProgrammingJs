@@ -1,26 +1,30 @@
 <html>
-	<head>		
+	<head>
 		<script src="vendors/kinetic-v4.0.1.min.js"></script>
 		<script src="vendors/jquery-1.8.1.min.js"></script>
+				
+		<!-- So we can have access to math functions -->
+		<script src="vendors/Box2d.debug.js"></script>
 		<script src="vendors/stats.js"></script>
 		<script>
 			$(function(){
+				var b2Math = Box2D.Common.Math.b2Math
 				var worker;
 				// kinetic
 				var stage, layer, anim;
 				var stats;
-				
+
 				var selected;
 				var SCALE = 30;
-				
+
 				var selectedInfo = $('#selected-info');
-				
+
 				$('#profile-start').click(function(){ console.profile('Profile ...'); });
 				$('#profile-stop').click(function(){ console.profileEnd(); });
-				
-				stats = new Stats();					
+
+				stats = new Stats();
 				$('#stats')[0].appendChild(stats.domElement);
-				
+
 				stage = new Kinetic.Stage({
 					container: "canvas-world",
 					width: 900,
@@ -35,60 +39,84 @@
 						width: stage.getWidth(),
 						height: stage.getHeight(),
 						fill: "black",
-					});					
+					});
 					layer.add(background);
 				})();
-				
+
 				layer.on('mousedown', function(evt){
 					selectedInfo.html('');
 				});
 
-				var entities = {};				
-				
+				var entities = {};
+				var CONST_rd = 180 / Math.PI;
+
+				var Polygon = function(iColor, iPoints, iX, iY, iAngle, iId){
+					this.type = 'polygon';
+					this.color = iColor;
+					this.points = iPoints;
+					this.x = iX;
+					this.y = iY;
+					this.angle = iAngle;
+					this.id = iId;
+				};
+				Polygon.prototype.move = function(power){
+					worker.postMessage({
+						name:'applyImpulse',
+						data: {
+							id: this.id,
+							degrees: 90 + CONST_rd * this.angle,
+							power: power
+						}
+					});
+				};
+				Polygon.prototype.torque = function(power){
+					worker.postMessage({name:'applyTorque', data:{id: this.id, power:power}});
+				};
+
 				for(var i = 1; i < 50; ++i){
-					entities['triangle' + i] = {
-						type:'polygon',
-						color: i % 2 ? 'blue' : 'red',
-						// FIXME This might affect performance ...
-						points:[{x: 0 / SCALE, y: 0 / SCALE}, {x: 10 / SCALE, y: 0 / SCALE}, {x: 0 / SCALE, y: 15 / SCALE}],
-						x: Math.random() * 450 / SCALE,
-						y: Math.random() * 300 / SCALE,
-						angle: 0,
-						id: 'triangle' + i
-					};
+					entities['triangle' + i] = new Polygon(
+							(i % 2 ? 'blue' : 'red'),
+							[{x: 0 / SCALE, y: 0 / SCALE},
+							 {x: 10 / SCALE, y: 0 / SCALE},
+							 {x: 5 / SCALE, y: 15 / SCALE}],
+							Math.random() * 450 / SCALE,
+							Math.random() * 300 / SCALE,
+							0, 'triangle' + i);
+					//--
 				}
-				
+
 				worker = new Worker('exec2.js');
 				worker.addEventListener('error', function(e){
 					console.warn('Error!');
 					console.error(e);
 				});
-				worker.addEventListener('message', function(event){						
+				worker.addEventListener('message', function(event){
 					var data = event.data;
 					var __name = data.name;
 					var __data = data.data;
 					var __err = data.err;
-					
+
 					if(__err){
 						console.log('ERROR:', data);
 						return;
 					}
-					
+
 					if(__name === 'update') {
 						var current, entity;
-						
-						// FIXME: Unroll this.						
+
+						// FIXME: Unroll this.
 						for(var id in __data){
 							current = __data[id];
 							entity = entities[id];
-							
+
 							entity.x = current.x;
 							entity.y = current.y;
 							entity.angle = current.a;
+							entity.t = current.t;
 						}
-						
+
 						//eval(unrolledUpdate);
-						
+
 						//updateAll(__data, entities);
 					}
 
@@ -105,19 +133,20 @@
 					if(__name === 'appendBodies'){
 						worker.postMessage({name:'start', data:entities} );
 					}
-					
+
 					if(__name === 'start'){
 						// After appending, attach the drawing function ... which also creates the visual
 						// representations ...
 						for(var k in entities){
 							(function(entity){
-							
+
 								entity.draw = (function(_this){
-									var obj; 
+									var obj, v1;
 									var lastAngle = _this.angle;
 									var lastX = _this.x;
 									var lastY = _this.y;
-									
+									var lastT = _this.t;
+
 									if(_this.type === 'circle'){
 										obj = new Kinetic.Circle({
 											radius: _this.radius * SCALE,
@@ -136,32 +165,58 @@
 											x: _this.x * SCALE,
 											y: _this.y * SCALE
 										});
+
+										// DEBUG!
+										/*v1 = new Kinetic.Circle({
+											radius : 2,
+											fill : "green",
+											stroke: "green",
+											strokeWidth: 2,
+											x: _this.points[2].x * SCALE,
+											y: _this.points[2].y * SCALE
+										});*/
 									}
-									
+
 									if(! obj)
 										throw 'No object!';
 
 									obj.on('mousedown', function(evt){
 										// Select!
 										selected = obj;
+
 										// Cancel from propagating upwards
 										evt.cancelBubble = true;
-										
+
 										selectedInfo.html(
-												'Selected is ' + _this.id + ', <br/ > here: ' + obj.getX() + ', ' + obj.getY() + 
-												'<br/><a id="force" href="#">Apply force!</a><br/ ><a id="impulse" href="#">Apply impulse!</a>');
-										
+												'Selected is ' + _this.id + ', <br/ > here: ' + obj.getX() +
+												', ' + obj.getY() + ', ' + // JSON.stringify(_this.t) +
+												'<br/ ><a id="force" href="#">Apply force!</a>' +
+												'<br/ ><a id="impulse" href="#">Apply impulse!</a>' +
+												'<br/ ><a id="torque" href="#">Apply torque!</a>' /*+
+												'<br/ ><a id="angularImpulse" href="#">Apply angular impulse!</a>'*/);
+
 										$('#force').click(function(){
-											worker.postMessage({name: "applyForce", data: { id: _this.id, degrees: (Math.random()*360 - 180), power: 1}});
-										})
+											_this.move(Math.random());
+										});
+
 										$('#impulse').click(function(){
-											worker.postMessage({name: "applyImpulse", data: { id: _this.id, degrees: (Math.random()*360 - 180), power: 1}});
-										})
+											_this.move(Math.random());
+										});
+
+										$('#torque').click(function(){
+											_this.torque(Math.random());
+										});
 									});
-																		
+
 									layer.add(obj);
 									obj.moveToTop();
-									
+
+									// DEBUG!
+									if(v1){
+										layer.add(v1);
+										v1.moveToTop();
+									}
+
 									return function(){
 										if(_this.x != lastX) {
 											obj.setX(_this.x * SCALE);
@@ -175,14 +230,23 @@
 											obj.rotate( _this.angle - lastAngle );
 											lastAngle = _this.angle;
 										}
+
+										// DEBUG!
+										if(_this.t != lastT){
+											var vt = b2Math.MulX(_this.t, _this.points[2]);
+											//v1.setX(vt.x * SCALE);
+											//v1.setY(vt.y * SCALE);	/**/
+											lastT = _this.t;
+										}
+
 									}
 								})(entity);
-								
+
 							})(entities[k]);
 						}
-																		
+
 						stage.add(layer);
-																		
+
 						// Start drawing!
 						anim = new Kinetic.Animation({
 						  func: (function(){
@@ -192,9 +256,9 @@
 										if(ready){
 											ready = false;
 
-											// Draw all entities ...											
+											// Draw all entities ...
 											for(var k in entities) {
-												entities[k].draw();
+												entities[k].draw();												
 											}
 
 											stats.update();
@@ -206,27 +270,42 @@
 						  node: layer
 						});
 						anim.start();
+						
+												
+						setInterval(function _loop(){
+							// Do something ...
+							for(var k in entities){
+								switch(Math.ceil(Math.random() * 2 )){
+									case 0:
+										entities[k].move(Math.random());
+										break;
+									case 1:
+										entities[k].torque(Math.random());
+										break;
+								}
+							}
+						}, 1000);
 					}
-					
+
 					if(__name === 'debug'){
 						console.log(__data);
 					}
-				
+
 				}); // worker.addEventListener(function(event){ ...
-				
-				
+
+
 				// Ready to start ...
-				$('#starter').click( function(){ 
+				$('#starter').click( function(){
 					worker.postMessage({
-							name:'create', 
-							data:{ 
-								scale: SCALE, 
+							name:'create',
+							data:{
+								scale: SCALE,
 								width: 900,
 								height: 600
 							}
-						}); 
+						});
 					//--
-					
+
 					// Remove onClick to starter...
 					$('#starter').click(function(){ });
 
@@ -236,10 +315,10 @@
 						worker.postMessage({name:'close'});
 					});
 				});
-				
+
 			}); // $(function(){ ...
-			
-			
+
+
 		</script>
 	</head>
 	<body>

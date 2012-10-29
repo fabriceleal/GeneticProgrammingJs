@@ -9,24 +9,24 @@
 	var go;
 	
 	$(function(){		
-		var optimize = 'function(x){ return x*x + x + 1; }';
-		
 		var plot = $('#plot');
 		var logs = $('#logs-content');
 		var status = $('#status');
 		
 		worker = new Worker("exec.js");
 		
+		var inputValues = [], testValues = [];
+		// Function to optimize (add noise, it's fun!)
+		var optimize = 'function(x){ return x*x + x + 1 + (Math.random() * 0.3 - 0.15); }';
+		var fn = eval('(function(){ return (' + optimize + ') ;})()');
+		
 		// Plot the function to approximate
-		var inputValues = [], testValues = [], original, fn = eval('(function(){ return (' + optimize + ');})()');
 		for(var i = -1, y = 0; i <=1; i+=0.1, ++y){
 			inputValues.push(i);
 			testValues.push(fn(i));
 		}
-		original = inputValues.map(function(i, idx){ return [i, testValues[idx] ];})
+		var original = inputValues.map(function(i, idx){ return [i, testValues[idx] ];})
 		
-		logs.append(new Date() + ': to approximate: ' + testValues.join(', ') + '<br/ >');
-
 		worker.addEventListener("message", function(event){
 			logs.append(new Date() + ': ' + event.data.name + ' result: ' + JSON.stringify(event.data.data) + "<br/ > ");
 
@@ -67,6 +67,8 @@
 			
 			// Clean plot ...
 			$.plot(plot, [{label:"original", data:original, points:{ show:true }}]);
+			
+			logs.append(new Date() + ': to approximate: ' + testValues.join(', ') + '<br/ >');
 			
 			// Start!
 			worker.postMessage({ name:"load", data: { }});

@@ -14,7 +14,8 @@ var   b2Vec2 = Box2D.Common.Math.b2Vec2
 	 , b2PrismaticJointDef = Box2D.Dynamics.Joints.b2PrismaticJointDef
 	 , b2PrismaticJoint = Box2D.Dynamics.Joints.b2PrismaticJoint
 	 , b2Transform = Box2D.Common.Math.b2Transform
-	 , b2RayCastInput = Box2D.Collision.b2RayCastInput;
+	 , b2RayCastInput = Box2D.Collision.b2RayCastInput
+	 /*, b2Math = Box2D.Common.Math.b2Math*/;
 
 var WorldClass = function(interval, adaptive, scale, width, height){
 	this.interval = interval;
@@ -29,7 +30,7 @@ var WorldClass = function(interval, adaptive, scale, width, height){
 			
 	this.fixDef = new b2FixtureDef();
 	this.fixDef.density = 1.0;
-	this.fixDef.friction = 0.5;
+	this.fixDef.friction = 0.7;
 	this.fixDef.restitution = 0.2;
 	
 	this.bodies = {};
@@ -118,14 +119,17 @@ WorldClass.prototype.update = function(){
 };
 
 WorldClass.prototype.sendUpdate = function(){
-	var data = {};
+	var data = {}, p;
 	for(var b = this.world.GetBodyList(); b; b = b.m_next){
 		if(typeof b.GetUserData() !== 'undefined' && b.GetUserData() !== null) {
+			p = b.GetPosition();
+			
 			data[b.GetUserData()] = {
 				id: b.GetUserData(),
-				x : b.GetPosition().x,
-				y : b.GetPosition().y,
-				a : b.GetAngle()
+				x : p.x,
+				y : p.y,
+				a : b.GetAngle(),
+				t : (function(_t){ return _t; })(b.m_xf)
 			};
 		}
 	}
@@ -205,6 +209,25 @@ addEventListener('message', function(event){
 			err = e.toString();
 		}
 	}
+	
+	if(__name === 'applyTorque'){
+		try{			
+			var body = world.bodies[__data.id];
+			var power = __data.power;
+			body.ApplyTorque(power);
+		}catch(e){
+			err = e.toString();
+		}
+	}
+	/*
+	if(__name === 'applyAngularImpulse'){
+		try{			
+			var body = world.bodies[__data.id];
+			body.ApplyAngularImpulse(0.5);
+		}catch(e){
+			err = e.toString();
+		}
+	}*/
 	
 	if(__name === 'applyForce'){
 		try{			
